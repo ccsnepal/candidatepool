@@ -1,8 +1,7 @@
-streamlit==1.10.0
-gspread==5.0.0
-oauth2client==4.1.3
-pandas==1.3.5
-nepali-datetime==0.1.1
-streamlit-echarts==0.1.0
-pdfplumber==0.7.0
-requests==2.26.0
+streamlit
+pandas
+nepali-datetime
+gspread
+oauth2client
+requests
+pdfplumber
