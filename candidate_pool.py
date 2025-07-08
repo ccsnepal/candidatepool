@@ -3,7 +3,7 @@ import nepali_datetime
 from datetime import datetime
 import streamlit as st
 import pandas as pd
-from streamlit_echarts import st_echarts, JsCode
+from streamlit_echarts import st_echarts
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from candidate_designation import candidate_designation 
@@ -13,11 +13,6 @@ st.set_page_config(page_title="Nokari Nepal", page_icon="nokarinepal_logo.png")
 
 visit_office_options = ['Yes', 'No']
 interview_status_options = ["Not Attended", "Interview Scheduled", "Interview Rejected", "Interview Selected", "Attended"]
-
-nepali_month_names = [
-    "बैशाख", "ज्येष्ठ", "आषाढ", "श्रावण", "भाद्र", "आश्विन", 
-    "कार्तिक", "मंसिर", "पौष", "माघ", "फाल्गुण", "चैत"
-]
 
 # Function to check if the current Nepali month has ended based on the English date
 def get_nepali_month_end_check():
@@ -103,6 +98,22 @@ def update_google_sheet(data):
 def candidate_pool_management(data):
     st.title("Candidate Pool Management")
 
+    # Initialize form fields in session state
+    if 'form_data' not in st.session_state:
+        st.session_state.form_data = {
+            "candidate_name": "",
+            "job_category": data['Job Category'].unique()[0],
+            "visit_sources": data['Visit From Where ?'].unique()[0],
+            "email_id": "",
+            "job_selection": data['Job Selection'].unique()[0],
+            "address": "",
+            "contact_number": "",
+            "interview_status": interview_status_options[0],
+            "visit_office": visit_office_options[0],
+            "visit_office_date": datetime.today().date(),
+            "remarks": ""
+        }
+
     col1, col2, col3 = st.columns(3)
 
     with col1:
@@ -148,17 +159,17 @@ def candidate_pool_management(data):
     if st.session_state.show_form:
         with st.expander("Add New Candidate", expanded=True):
             with st.form(key='add_candidate_form'):
-                candidate_name = st.text_input("Candidate Name", value="")
-                job_category = st.selectbox("Job Category", data['Job Category'].unique())
-                visit_sources = st.selectbox("Visit From Where?", data['Visit From Where ?'].unique())
-                email_id = st.text_input("Email Id", value="")
-                job_selection = st.selectbox("Job Selection", data['Job Selection'].unique())
-                address = st.text_input("Address", value="")
-                contact_number = st.text_input("Contact Number", value="")
-                interview_status = st.selectbox("Interview Status", interview_status_options)
-                visit_office = st.selectbox("Visit Office", visit_office_options)
-                visit_office_date = st.date_input("Visit Office Date")
-                remarks = st.text_input("Remarks", value="")
+                candidate_name = st.text_input("Candidate Name", value=st.session_state.form_data["candidate_name"])
+                job_category = st.selectbox("Job Category", data['Job Category'].unique(), index=list(data['Job Category'].unique()).index(st.session_state.form_data["job_category"]))
+                visit_sources = st.selectbox("Visit From Where?", data['Visit From Where ?'].unique(), index=list(data['Visit From Where ?'].unique()).index(st.session_state.form_data["visit_sources"]))
+                email_id = st.text_input("Email Id", value=st.session_state.form_data["email_id"])
+                job_selection = st.selectbox("Job Selection", data['Job Selection'].unique(), index=list(data['Job Selection'].unique()).index(st.session_state.form_data["job_selection"]))
+                address = st.text_input("Address", value=st.session_state.form_data["address"])
+                contact_number = st.text_input("Contact Number", value=st.session_state.form_data["contact_number"])
+                interview_status = st.selectbox("Interview Status", interview_status_options, index=interview_status_options.index(st.session_state.form_data["interview_status"]))
+                visit_office = st.selectbox("Visit Office", visit_office_options, index=visit_office_options.index(st.session_state.form_data["visit_office"]))
+                visit_office_date = st.date_input("Visit Office Date", value=st.session_state.form_data["visit_office_date"])
+                remarks = st.text_input("Remarks", value=st.session_state.form_data["remarks"])
                 
                 submit_button = st.form_submit_button(label='Add New Candidate')
 
@@ -187,10 +198,6 @@ def candidate_pool_management(data):
                         data = pd.concat([data, new_candidate], ignore_index=True)
                     except Exception as e:
                         st.error(f"Error while appending new candidate: {e}")
-                        st.write("Data before appending:")
-                        st.write(data)
-                        st.write("New candidate to append:")
-                        st.write(new_candidate)
                         raise
 
                     update_google_sheet(data)
@@ -200,6 +207,19 @@ def candidate_pool_management(data):
                     st.write(new_candidate)
 
                     # Clear form fields by resetting session state values
+                    st.session_state.form_data = {
+                        "candidate_name": "",
+                        "job_category": data['Job Category'].unique()[0],
+                        "visit_sources": data['Visit From Where ?'].unique()[0],
+                        "email_id": "",
+                        "job_selection": data['Job Selection'].unique()[0],
+                        "address": "",
+                        "contact_number": "",
+                        "interview_status": interview_status_options[0],
+                        "visit_office": visit_office_options[0],
+                        "visit_office_date": datetime.today().date(),
+                        "remarks": ""
+                    }
                     st.session_state.show_form = False
 
     current_page_data = pd.DataFrame()  # Initialize with an empty DataFrame
